@@ -32,6 +32,6 @@ TBD
 ## Auteur
 Aidoudi Aaron
 
-Projet du cours **Agents Intelligents**, encadré par **Pavlos Moraitis** - Master 1 Intelligence Artificielle Distribuée à l'Université Paris Cité
+Projet du cours **Agents Intelligents**, encadré par Pavlos Moraitis - Master 1 Intelligence Artificielle Distribuée à l'Université Paris Cité
 
 Année Universitaire 2025-2026
