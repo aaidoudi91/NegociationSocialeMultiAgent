@@ -21,7 +21,7 @@ dimensions simultanées :
   connaissances privée (profils des employés, statistiques sectorielles, précédents, ...).
 
 Les deux agents ne partagent aucune base de faits commune. Le résultat de la 
-négociation n'est pas prédéterminé — il émerge des arguments échangés et des 
+négociation n'est pas prédéterminé mais émerge des arguments échangés et des 
 concessions consenties.
 
 
