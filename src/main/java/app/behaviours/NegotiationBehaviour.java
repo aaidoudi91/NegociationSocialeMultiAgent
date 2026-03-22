@@ -52,7 +52,7 @@ public class NegotiationBehaviour extends CyclicBehaviour {
         ACLMessage msg = myAgent.receive(mt);
         if (msg == null) { block(); return; } // Met l'agent en veille jusqu'au prochain message
 
-        // Découverte dynamique du partenaire 
+        // Découverte dynamique du partenaire
         if (partner == null) {
             partner = msg.getSender();
             System.out.printf("[%s] Partenaire découvert : %s%n", myAgent.getLocalName(), partner.getLocalName());
@@ -64,11 +64,11 @@ public class NegotiationBehaviour extends CyclicBehaviour {
                 handlePropose(msg);
                 break;
             case ACLMessage.ACCEPT_PROPOSAL:
-                System.out.printf("[%s]Accord accepté par l'autre agent.%n", myAgent.getLocalName());
+                System.out.printf("[%s] Accord accepté par l'autre agent.%n", myAgent.getLocalName());
                 finished = true;
                 break;
             case ACLMessage.FAILURE:
-                System.out.printf("[%s]Deadlock déclaré par l'autre agent.%n", myAgent.getLocalName());
+                System.out.printf("[%s] Deadlock déclaré par l'autre agent.%n", myAgent.getLocalName());
                 finished = true;
                 break;
         }
@@ -84,8 +84,8 @@ public class NegotiationBehaviour extends CyclicBehaviour {
             return;
         }
 
-        System.out.printf("[%s]Tour %-2d | Reçu    : %s%n", myAgent.getLocalName(), turn, lastReceivedOffer);
-        
+        System.out.printf("[%s] Tour %-2d | Reçu : %s%n", myAgent.getLocalName(), turn, lastReceivedOffer);
+
         if (kb.isAcceptable(lastReceivedOffer)) { // L'offre satisfait nos conditions minimales alors accord
             sendAccept();
         }
@@ -96,7 +96,7 @@ public class NegotiationBehaviour extends CyclicBehaviour {
             // Calcul de la concession puis clamp par la KB pour ne jamais franchir les lignes rouges
             currentOffer = kb.clamp(ConcessionStrategy.concede(currentOffer, lastReceivedOffer));
             turn++;
-            System.out.printf("[%s]Tour %-2d | Envoyé  : %s%n", myAgent.getLocalName(), turn, currentOffer);
+            System.out.printf("[%s] Tour %-2d | Envoyé : %s%n", myAgent.getLocalName(), turn, currentOffer);
             sendOffer(currentOffer);
         }
     }
@@ -117,7 +117,7 @@ public class NegotiationBehaviour extends CyclicBehaviour {
         msg.setConversationId(CONV_ID);
         msg.setContent("ACCORD");
         myAgent.send(msg);
-        System.out.printf("%n[%s]ACCORD FINAL : %s%n", myAgent.getLocalName(), lastReceivedOffer);
+        System.out.printf("%n[%s] ACCORD FINAL : %s%n", myAgent.getLocalName(), lastReceivedOffer);
         finished = true;
     }
 
@@ -127,7 +127,7 @@ public class NegotiationBehaviour extends CyclicBehaviour {
         msg.setConversationId(CONV_ID);
         msg.setContent("DEADLOCK");
         myAgent.send(msg);
-        System.out.printf("[%s]DEADLOCK après %d tours.%n", myAgent.getLocalName(), turn);
+        System.out.printf("[%s] IMPASSE après %d tours.%n", myAgent.getLocalName(), turn);
         finished = true;
     }
 }
