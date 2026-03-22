@@ -65,7 +65,7 @@ public class DirectionKB implements KnowledgeBase {
         return new Argument("ARG_DIR_RYTHME",
                 "Un déploiement en 18 mois est la limite de viabilité économique",
                 "ROI atteint en 18 mois selon nos projections financières internes",
-                "Retarder détériore le ROI de façon non-linéaire",
+                "Retarder détériore le ROI",
                 Dimension.RYTHME_DEPLOIEMENT, Argument.Type.SUPPORT, 0.75);
     }
 
