@@ -3,8 +3,7 @@ package app.model;
 import java.io.Serializable;
 
 /** Représente une proposition (ou contre-proposition) échangée entre les agents.
- * Cette classe est immuable pour garantir qu'aucune offre n'est modifiée par erreur après sa création ou pendant son
- * transit via JADE. */
+ * Immuable pour garantir qu'aucune offre n'est modifiée après sa création ou pendant son transit via JADE. */
 public class Offer implements Serializable {
     private final int postesSupprimes;
     private final int dureeRequalification;
@@ -33,13 +32,12 @@ public class Offer implements Serializable {
 
     @Override
     public String toString() {
-        return String.format(
-                "Offer{postes=%d, requalif=%dmois, compens=%dmois, rythme=%dmois, priorite=%b, comite=%b}",
-                postesSupprimes, dureeRequalification, compensationMois,
-                rythmeDeploiement, prioriteRecrutement, comiteSuivi);
+        return String.format("Offer{postes=%d, requalif=%dmois, compens=%dmois, rythme=%dmois, priorite=%b, comite=%b}",
+                postesSupprimes, dureeRequalification, compensationMois, rythmeDeploiement,
+                prioriteRecrutement, comiteSuivi);
     }
 
-    /** Classe utilitaire permettant de construire une offre. */
+    // Classe utilitaire permettant de construire une offre.
     public static class Builder {
         private int postesSupprimes;
         private int dureeRequalification;
