@@ -16,7 +16,6 @@ public class DirectionAgent extends Agent {
     @Override
     protected void setup() {
         System.out.println("[DIRECTION] Agent démarré : " + getAID().getName());
-
         // Comportement cyclique (toutes les 500ms) pour chercher l'agent Syndicat
         // Permet à la Direction de démarrer même si le Syndicat n'est pas encore prêt
         addBehaviour(new TickerBehaviour(this, 500) {
@@ -25,10 +24,9 @@ public class DirectionAgent extends Agent {
                 AID partnerAID = searchDF();
                 if (partnerAID != null) {
                     System.out.println("[DIRECTION] Syndicat trouvé : " + partnerAID.getLocalName());
-
                     // Initialise la négociation avec sa KB et l'AID du partenaire
                     addBehaviour(new NegotiationBehaviour(myAgent, new DirectionKB(), partnerAID, true));
-                    stop(); // Arrête la recherche une fois le partenaire trouvé
+                    stop();
                 } else {
                     System.out.println("[DIRECTION] Syndicat introuvable, nouvelle tentative...");
                 }
@@ -42,7 +40,6 @@ public class DirectionAgent extends Agent {
         ServiceDescription sd = new ServiceDescription();
         sd.setType("negociation");
         template.addServices(sd);
-
         try {
             DFAgentDescription[] results = DFService.search(this, template);
             if (results.length > 0) return results[0].getName();
