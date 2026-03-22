@@ -14,8 +14,7 @@ public class SyndicatAgent extends Agent {
     @Override
     protected void setup() {
         System.out.println("[SYNDICAT] Agent démarré : " + getAID().getName());
-        registerToDF(); // S'enregistre dans l'annuaire JADE pour que la Direction puisse le trouver
-
+        registerToDF(); // S'enregistre pour que la Direction puisse le trouver
         // Lance le comportement de négociation avec sa propre KB
         addBehaviour(new NegotiationBehaviour(this, new SyndicatKB(), null, false));
     }
@@ -24,12 +23,10 @@ public class SyndicatAgent extends Agent {
     private void registerToDF() {
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
-
         ServiceDescription sd = new ServiceDescription();
         sd.setType("negociation");
         sd.setName("SyndicatNegociateur");
         dfd.addServices(sd);
-
         try {
             DFService.register(this, dfd);
             System.out.println("[SYNDICAT] Enregistré dans le DF.");
