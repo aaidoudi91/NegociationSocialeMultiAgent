@@ -9,15 +9,15 @@ public interface KnowledgeBase {
     // Retourne la position minimale acceptable.
     Offer getMinAcceptableOffer();
 
-    // Interroge le système Raison pour générer un argument justifiant la position de l'agent sur une dimension.
-    Argument generateArgumentFor(Dimension dimension);
-
-    // Évalue un argument reçu de l'adversaire au tour précédent et tente de formuler une attaque.
-    Argument generateAttackAgainst(Argument incoming);
-
     // Vérifie si l'offre adverse satisfait l'acceptabilité de la KB.
     boolean isAcceptable(Offer offer);
 
     // Ajuste une offre calculée pour s'assurer qu'elle ne dépasse pas les limites fixées par getMinAcceptableOffer().
     Offer clamp(Offer offer);
+
+    // Interroge le système rAIson pour générer un argument justifiant la position de l'agent sur une dimension.
+    Argument generateArgumentFor(Dimension dimension);
+
+    // Évalue un argument reçu de l'adversaire au tour précédent et tente de formuler une attaque.
+    Argument generateAttackAgainst(Argument incoming);
 }
