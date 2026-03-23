@@ -5,39 +5,39 @@ import java.io.Serializable;
 /** Modèle d'un argument échangé lors de la négociation. Immuable pour sécuriser les échanges via JADE. Plus tard, ces
  * valeurs seront générées dynamiquement par le rAIson.*/
 public class Argument implements Serializable {
-    public enum Type { SUPPORT, ATTACK }
+    public enum Type {SUPPORT, ATTAQUE}
 
     private final String id;
-    private final String claim; // L'affirmation (ex: "La requalification est insuffisante")
-    private final String evidence; // La donnée brute (ex: "Profil métier complexe")
-    private final String warrant; // Le lien (ex: "Un métier complexe requiert plus de temps")
-    private final Dimension targetDimension; // La dimension visée par cet argument
-    private final Type type; // SUPPORT (pour soi) ou ATTACK (contre l'autre)
-    private final double strength; // Force de l'argument (de 0.0 à 1.0)
+    private final String affirmation; // (ex: "la requalification est insuffisante")
+    private final String preuve; // (ex: "profil métier complexe")
+    private final String justification; // (ex: "un métier complexe requiert plus de temps")
+    private final Dimension dimensionCible;
+    private final Type type; // SUPPORT (pour soi) ou ATTAQUE (contre l'autre)
+    private final double force; // de 0,0 à 1,0
 
-    public Argument(String id, String claim, String evidence, String warrant, Dimension targetDimension,
-                    Type type, double strength) {
+    public Argument(String id, String affirmation, String preuve, String justification, Dimension dimensionCible,
+                    Type type, double force) {
         this.id = id;
-        this.claim = claim;
-        this.evidence = evidence;
-        this.warrant = warrant;
-        this.targetDimension = targetDimension;
+        this.affirmation = affirmation;
+        this.preuve = preuve;
+        this.justification = justification;
+        this.dimensionCible = dimensionCible;
         this.type = type;
-        this.strength = strength;
+        this.force = force;
     }
 
     // Getters pour l'accès en lecture
     public String getId() { return id; }
-    public String getClaim() { return claim; }
-    public String getEvidence() { return evidence; }
-    public String getWarrant() { return warrant; }
-    public Dimension getTargetDimension() { return targetDimension; }
+    public String getAffirmation() { return affirmation; }
+    public String getPreuve() { return preuve; }
+    public String getJustification() { return justification; }
+    public Dimension getDimensionCible() { return dimensionCible; }
     public Type getType() { return type; }
-    public double getStrength() { return strength; }
+    public double getForce() { return force; }
 
     @Override
     public String toString() {
-        return String.format("[%s | force=%.2f] %s\n  Evidence: %s\n  Warrant: %s", id, strength, claim, 
-                evidence, warrant);
+        return String.format("[%s | force=%.2f] %s\n  Preuve: %s\n  Justification: %s", id, force, affirmation,
+                preuve, justification);
     }
 }
