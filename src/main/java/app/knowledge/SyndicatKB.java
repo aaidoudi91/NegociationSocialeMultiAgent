@@ -8,7 +8,7 @@ public class SyndicatKB implements KnowledgeBase {
 
     // Définit la position de départ idéale du Syndicat.
     @Override
-    public Offer getInitialOffer() {
+    public Offer getOffreInitiale() {
         return new Offer.Builder()
                 .postesSupprimes(0) // Refus initial de suppression
                 .dureeRequalification(24) // Demande de formation longue
@@ -21,7 +21,7 @@ public class SyndicatKB implements KnowledgeBase {
 
     // Définit la pire offre acceptable pour le Syndicat avant d'appeler à la grève.
     @Override
-    public Offer getMinAcceptableOffer() {
+    public Offer getOffreMinAcceptable() {
         return new Offer.Builder()
                 .postesSupprimes(40)
                 .dureeRequalification(12)
@@ -34,8 +34,8 @@ public class SyndicatKB implements KnowledgeBase {
 
     // Évalue si une offre reçue de la Direction respecte les lignes rouges syndicales.
     @Override
-    public boolean isAcceptable(Offer o) {
-        Offer min = getMinAcceptableOffer();
+    public boolean estAcceptable(Offer o) {
+        Offer min = getOffreMinAcceptable();
         return o.getPostesSupprimes() <= min.getPostesSupprimes()
                 && o.getDureeRequalification() >= min.getDureeRequalification()
                 && o.getCompensationMois() >= min.getCompensationMois()
@@ -47,8 +47,8 @@ public class SyndicatKB implements KnowledgeBase {
     // Bride les concessions du Syndicat pour s'assurer qu'il ne propose jamais une offre inférieure à ses propres
     // lignes rouges.
     @Override
-    public Offer clamp(Offer o) {
-        Offer min = getMinAcceptableOffer();
+    public Offer brider(Offer o) {
+        Offer min = getOffreMinAcceptable();
         return new Offer.Builder()
                 .postesSupprimes(Math.min(o.getPostesSupprimes(), min.getPostesSupprimes()))
                 .dureeRequalification(Math.max(o.getDureeRequalification(), min.getDureeRequalification()))
@@ -63,7 +63,7 @@ public class SyndicatKB implements KnowledgeBase {
     // Simule le moteur rAIson et génère des arguments préconçus pour défendre la position du Syndicat,
     // basés sur des données sociales et des précédents.
     @Override
-    public Argument generateArgumentFor(Dimension dim) {
+    public Argument genererArgumentPour(Dimension dim) {
         return new Argument("ARG_SYND_01",
                 "La requalification à 6 mois est insuffisante pour ce profil",
                 "67% des travailleurs ont +45 ans. Taux de reconversion réelle à 6 mois : 23%",
@@ -73,13 +73,13 @@ public class SyndicatKB implements KnowledgeBase {
 
     // Tente de contrer un argument de la Direction en attaquant ses prémisses
     @Override
-    public Argument generateAttackAgainst(Argument incoming) {
+    public Argument genererArgumentContre(Argument incoming) {
         if ("ARG_DIR_ATTACK_01".equals(incoming.getId())) {
             return new Argument("ARG_SYND_ATK_02",
                     "La certification ne garantit pas le résultat concret sur ce profil",
                     "Aucune donnée de suivi post-formation fournie pour des profils +45 ans",
                     "Sans données réelles sur ce profil, la certification est insuffisante",
-                    incoming.getTargetDimension(), Argument.Type.ATTACK, 0.78
+                    incoming.getDimensionCible(), Argument.Type.ATTAQUE, 0.78
             );
         }
         return null;
