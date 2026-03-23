@@ -12,122 +12,118 @@ import app.model.Offer;
  * et répondre en continu jusqu'à ce qu'un accord ou une impasse soit atteint. */
 public class NegotiationBehaviour extends CyclicBehaviour {
     private final KnowledgeBase kb;
-    private final boolean isInitiator;
-    private static final int MAX_TURNS = 15; // Sécurité pour éviter les négociations infinies
+    private final boolean isInitiateur;
+    private static final int TOURS_MAX = 15; // Sécurité pour éviter les négociations infinies
     private static final String CONV_ID = "negociation";
 
-    private AID partner; // Destinataire (peut être null au départ pour l'agent répondeur)
-    private Offer currentOffer; // L'offre courante de l'agent
-    private Offer lastReceivedOffer;
-    private int turn = 0;
-    private boolean finished  = false; // Condition d'arrêt du CyclicBehaviour
-    private boolean initiated = false; // Permet à l'initiateur de lancer la négociation une seule fois
+    private AID destinataire; // Peut être null au départ pour l'agent répondeur
+    private Offer offreCourante;
+    private Offer derniereOffreRecue;
+    private int tour = 0;
+    private boolean termine = false; // Condition d'arrêt du CyclicBehaviour
+    private boolean initie = false; // Permet à l'initiateur de lancer la négociation une seule fois
 
-    public NegotiationBehaviour(Agent agent, KnowledgeBase kb, AID partner, boolean isInitiator) {
+    public NegotiationBehaviour(Agent agent, KnowledgeBase kb, AID partenaire, boolean isInitiateur) {
         super(agent);
         this.kb = kb;
-        this.partner = partner;
-        this.isInitiator = isInitiator;
-        this.currentOffer = kb.getInitialOffer(); // Initialisation avec la position de base de la KB
+        this.destinataire = partenaire;
+        this.isInitiateur = isInitiateur;
+        this.offreCourante = kb.getOffreInitiale(); // Initialisation avec la position de base de la KB
     }
 
     @Override
     public void action() {
-        // Si la négociation est terminée, on bloque le comportement
-        if (finished) {
+        if (termine) { // Si la négociation est terminée, on bloque le comportement
             block();
             return;
         }
 
-        // Si l'initiateur est Direction, alors envoie la première offre
-        if (isInitiator && !initiated) {
-            initiated = true;
+        if (isInitiateur && !initie) { // Si l'initiateur est Direction, alors envoie la première offre
+            initie = true;
             System.out.printf("%nDÉBUT DE LA NÉGOCIATION%n");
-            sendOffer(currentOffer);
+            envoyerOffre(offreCourante);
             return; // On sort pour laisser le temps au message de partir, on lira la réponse au prochain cycle
         }
 
         // Écoute des messages filtrés par l'ID de conversation
         MessageTemplate mt = MessageTemplate.MatchConversationId(CONV_ID);
-        ACLMessage msg = myAgent.receive(mt);
-        if (msg == null) { block(); return; } // Met l'agent en veille jusqu'au prochain message
-
-        // Découverte dynamique du partenaire
-        if (partner == null) {
-            partner = msg.getSender();
-            System.out.printf("[%s] Partenaire découvert : %s%n", myAgent.getLocalName(), partner.getLocalName());
+        ACLMessage message = myAgent.receive(mt);
+        if (message == null) {
+            block(); // Met l'agent en veille jusqu'au prochain message
+            return;
         }
 
-        // Machine à états basée sur les speech acts
-        switch (msg.getPerformative()) {
+        if (destinataire == null) { // Découverte du partenaire
+            destinataire = message.getSender();
+            System.out.printf("[%s] Partenaire découvert : %s%n", myAgent.getLocalName(), destinataire.getLocalName());
+        }
+
+        switch (message.getPerformative()) { // Choix des speech acts
             case ACLMessage.PROPOSE:
-                handlePropose(msg);
+                traiterProposition(message);
                 break;
             case ACLMessage.ACCEPT_PROPOSAL:
                 System.out.printf("[%s] Accord accepté par l'autre agent.%n", myAgent.getLocalName());
-                finished = true;
+                termine = true;
                 break;
             case ACLMessage.FAILURE:
-                System.out.printf("[%s] Deadlock déclaré par l'autre agent.%n", myAgent.getLocalName());
-                finished = true;
+                System.out.printf("[%s] Impasse déclaré par l'autre agent.%n", myAgent.getLocalName());
+                termine = true;
                 break;
         }
     }
 
     // Traite la réception d'une offre (PROPOSE). Vérifie si l'acceptabilité, sinon calcule et envoie une contre-offre.
-    private void handlePropose(ACLMessage msg) {
+    private void traiterProposition(ACLMessage message) {
         try {
-            // Désérialisation de l'objet Offer transmis dans le message ACL
-            lastReceivedOffer = (Offer) msg.getContentObject();
+            derniereOffreRecue = (Offer) message.getContentObject(); // Désérialisation de l'objet Offer transmis
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
 
-        System.out.printf("[%s] Tour %-2d | Reçu : %s%n", myAgent.getLocalName(), turn, lastReceivedOffer);
+        System.out.printf("[%s] Tour %d | Reçu : %s%n", myAgent.getLocalName(), tour, derniereOffreRecue);
 
-        if (kb.isAcceptable(lastReceivedOffer)) { // L'offre satisfait nos conditions minimales alors accord
-            sendAccept();
-        }
-        else if (turn >= MAX_TURNS) { // On a dépassé la limite de tours sans trouver d'accord alors échec
-            sendDeadlock();
-        }
-        else { // L'offre est inacceptable alors génère une contre-proposition
-            // Calcul de la concession puis clamp par la KB pour ne jamais franchir les lignes rouges
-            currentOffer = kb.clamp(ConcessionStrategy.concede(currentOffer, lastReceivedOffer));
-            turn++;
-            System.out.printf("[%s] Tour %-2d | Envoyé : %s%n", myAgent.getLocalName(), turn, currentOffer);
-            sendOffer(currentOffer);
+        if (kb.estAcceptable(derniereOffreRecue)) { // L'offre satisfait nos conditions minimales alors accord
+            envoyerAccord();
+        } else if (tour >= TOURS_MAX) { // On a dépassé la limite de tours sans trouver d'accord alors échec
+            signalerImpasse();
+        } else { // L'offre est inacceptable alors génère une contre-proposition
+            // Calcul de la concession puis brider par la KB pour ne jamais franchir les lignes rouges
+            offreCourante = kb.brider(ConcessionStrategy.conceder(offreCourante, derniereOffreRecue));
+            tour++;
+            System.out.printf("[%s] Tour %d | Envoyé : %s%n", myAgent.getLocalName(), tour, offreCourante);
+            envoyerOffre(offreCourante);
         }
     }
 
-    private void sendOffer(Offer offer) {
+    private void envoyerOffre(Offer offer) {
         try {
-            ACLMessage msg = new ACLMessage(ACLMessage.PROPOSE);
-            msg.addReceiver(partner);
-            msg.setConversationId(CONV_ID);
-            msg.setContentObject(offer);
-            myAgent.send(msg);
+            ACLMessage message = new ACLMessage(ACLMessage.PROPOSE);
+            message.addReceiver(destinataire);
+            message.setConversationId(CONV_ID);
+            message.setContentObject(offer);
+            myAgent.send(message);
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    private void sendAccept() {
-        ACLMessage msg = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
-        msg.addReceiver(partner);
-        msg.setConversationId(CONV_ID);
-        msg.setContent("ACCORD");
-        myAgent.send(msg);
-        System.out.printf("%n[%s] ACCORD FINAL : %s%n", myAgent.getLocalName(), lastReceivedOffer);
-        finished = true;
+    private void envoyerAccord() {
+        ACLMessage message = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
+        message.addReceiver(destinataire);
+        message.setConversationId(CONV_ID);
+        message.setContent("ACCORD");
+        myAgent.send(message);
+        System.out.printf("%n[%s] ACCORD FINAL : %s%n", myAgent.getLocalName(), derniereOffreRecue);
+        termine = true;
     }
 
-    private void sendDeadlock() {
-        ACLMessage msg = new ACLMessage(ACLMessage.FAILURE);
-        msg.addReceiver(partner);
-        msg.setConversationId(CONV_ID);
-        msg.setContent("DEADLOCK");
-        myAgent.send(msg);
-        System.out.printf("[%s] IMPASSE après %d tours.%n", myAgent.getLocalName(), turn);
-        finished = true;
+    private void signalerImpasse() {
+        ACLMessage message = new ACLMessage(ACLMessage.FAILURE);
+        message.addReceiver(destinataire);
+        message.setConversationId(CONV_ID);
+        message.setContent("IMPASSE");
+        myAgent.send(message);
+        System.out.printf("[%s] IMPASSE après %d tours.%n", myAgent.getLocalName(), tour);
+        termine = true;
     }
 }
