@@ -5,14 +5,14 @@ import app.model.*;
 /** Base de Connaissances de l'Agent Direction représentant la stratégie de l'entreprise (maximiser le ROI tout en
  * limitant le coût des mesures sociales). */
 public class DirectionKB implements KnowledgeBase {
-    
+
     // Définit la position de départ idéale de la Direction.
     @Override
-    public Offer getInitialOffer() {
+    public Offer getOffreInitiale() {
         return new Offer.Builder()
                 .postesSupprimes(80)
-                .dureeRequalification(6) // Formation courte 
-                .compensationMois(0) // Aucune compensation 
+                .dureeRequalification(6) // Formation courte
+                .compensationMois(0) // Aucune compensation
                 .rythmeDeploiement(6) // Déploiement très rapide
                 .prioriteRecrutement(false) // Aucune garantie d'embauche
                 .comiteSuivi(false) // Pas de contrôle syndical
@@ -21,7 +21,7 @@ public class DirectionKB implements KnowledgeBase {
 
     // Définit la pire offre acceptable pour la Direction avant de rompre les négociations.
     @Override
-    public Offer getMinAcceptableOffer() {
+    public Offer getOffreMinAcceptable() {
         return new Offer.Builder()
                 .postesSupprimes(40) // Limite de rentabilité
                 .dureeRequalification(15) // Concession max sur la formation
@@ -34,8 +34,8 @@ public class DirectionKB implements KnowledgeBase {
 
     // Évalue si une offre reçue du Syndicat respecte toutes les lignes rouges de la Direction.
     @Override
-    public boolean isAcceptable(Offer o) {
-        Offer min = getMinAcceptableOffer();
+    public boolean estAcceptable(Offer o) {
+        Offer min = getOffreMinAcceptable();
         return o.getPostesSupprimes() >= min.getPostesSupprimes()
                 && o.getDureeRequalification() <= min.getDureeRequalification()
                 && o.getCompensationMois() <= min.getCompensationMois()
@@ -45,8 +45,8 @@ public class DirectionKB implements KnowledgeBase {
     // Force une offre à respecter les limites strictes de la Direction. Utilisé pour s'assurer que les concessions
     // générées mathématiquement ne dépassent jamais le seuil de tolérance de l'entreprise.
     @Override
-    public Offer clamp(Offer o) {
-        Offer min = getMinAcceptableOffer();
+    public Offer brider(Offer o) {
+        Offer min = getOffreMinAcceptable();
         return new Offer.Builder()
                 .postesSupprimes(Math.max(o.getPostesSupprimes(), min.getPostesSupprimes()))
                 .dureeRequalification(Math.min(o.getDureeRequalification(), min.getDureeRequalification()))
@@ -61,7 +61,7 @@ public class DirectionKB implements KnowledgeBase {
     // Simule le moteur rAIson. Génère des arguments préconçus pour défendre la position de la Direction sur une
     // dimension spécifique, basés sur des données financières.
     @Override
-    public Argument generateArgumentFor(Dimension dim) {
+    public Argument genererArgumentPour(Dimension dim) {
         return new Argument("ARG_DIR_RYTHME",
                 "Un déploiement en 18 mois est la limite de viabilité économique",
                 "ROI atteint en 18 mois selon nos projections financières internes",
@@ -71,13 +71,13 @@ public class DirectionKB implements KnowledgeBase {
 
     // Tente de contrer un argument spécifique reçu du Syndicat. Retourne null si la Direction n'en a pas.
     @Override
-    public Argument generateAttackAgainst(Argument incoming) {
+    public Argument genererArgumentContre(Argument incoming) {
         if ("ARG_SYND_01".equals(incoming.getId())) {
             return new Argument("ARG_DIR_ATTACK_01",
                     "Nos formations sont sur mesure, non comparables aux statistiques sectorielles",
                     "Programme de requalification validé par 3 organismes certifiés",
                     "Les statistiques générales ne s'appliquent pas à un dispositif dédié",
-                    incoming.getTargetDimension(), Argument.Type.ATTACK, 0.55);
+                    incoming.getDimensionCible(), Argument.Type.ATTAQUE, 0.55);
         }
         return null; // pas d'attaque connue donc on ne fait rien
     }
