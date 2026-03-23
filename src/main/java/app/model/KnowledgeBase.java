@@ -4,20 +4,16 @@ package app.model;
  * de négociation JADE et le système d'argumentation rAIson. */
 public interface KnowledgeBase {
     // Retourne la position initiale de l'agent avant le début des concessions.
-    Offer getInitialOffer();
-
+    Offer getOffreInitiale();
     // Retourne la position minimale acceptable.
-    Offer getMinAcceptableOffer();
-
+    Offer getOffreMinAcceptable();
     // Vérifie si l'offre adverse satisfait l'acceptabilité de la KB.
-    boolean isAcceptable(Offer offer);
-
-    // Ajuste une offre calculée pour s'assurer qu'elle ne dépasse pas les limites fixées par getMinAcceptableOffer().
-    Offer clamp(Offer offer);
+    boolean estAcceptable(Offer offer);
+    // Ajuste une offre calculée pour s'assurer qu'elle ne dépasse pas les limites fixées par getOffreMinAcceptable().
+    Offer brider(Offer offer);
 
     // Interroge le système rAIson pour générer un argument justifiant la position de l'agent sur une dimension.
-    Argument generateArgumentFor(Dimension dimension);
-
+    Argument genererArgumentPour(Dimension dimension);
     // Évalue un argument reçu de l'adversaire au tour précédent et tente de formuler une attaque.
-    Argument generateAttackAgainst(Argument incoming);
+    Argument genererArgumentContre(Argument incoming);
 }
