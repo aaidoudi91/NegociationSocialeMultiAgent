@@ -29,7 +29,7 @@ la logique décisionnelle, et le modèle de données.
 
 L'architecture Java s'articule autour de 4 packages principaux :
 
-### 1. Modèle de Données : `app.model` 
+#### 1. Modèle de Données : `app.model` 
 Définit les structures d'échange entre les agents.
 - **Les 6 dimensions négociables :** Postes supprimés, Plan de requalification, Compensation financière, 
 Rythme de déploiement, Priorité recrutement, et Comité de suivi.
