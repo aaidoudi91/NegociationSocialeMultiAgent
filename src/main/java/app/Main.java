@@ -19,12 +19,5 @@ public class Main {
 
         container.createNewAgent("Direction", "app.agents.DirectionAgent", null).start();
         container.createNewAgent("Syndicat", "app.agents.SyndicatAgent", null).start();
-
-        // Test des arguments
-        KnowledgeBase directionKB = new DirectionKB();
-        KnowledgeBase syndicatKB  = new SyndicatKB();
-        
-        System.out.println("\nOffre Direction : " + directionKB.getOffreInitiale());
-        System.out.println("Offre Syndicat : " + syndicatKB.getOffreInitiale());
     }
 }
