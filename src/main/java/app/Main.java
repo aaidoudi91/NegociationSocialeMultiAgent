@@ -23,16 +23,7 @@ public class Main {
         // Test des arguments
         KnowledgeBase directionKB = new DirectionKB();
         KnowledgeBase syndicatKB  = new SyndicatKB();
-        // Syndicat attaque la dimension DUREE_REQUALIFICATION
-        Argument argSynd = syndicatKB.genererArgumentPour(Dimension.DUREE_REQUALIFICATION);
-        System.out.println("Argument Syndicat : " + argSynd);
-        // Direction tente de l'attaquer
-        Argument attack = directionKB.genererArgumentContre(argSynd);
-        System.out.println("Attaque Direction : " + (attack != null ? attack : "Aucune attaque disponible"));
-        // Syndicat contre-attaque
-        Argument counterAtk = syndicatKB.genererArgumentContre(attack);
-        System.out.println("Contre-attaque Syndicat : " + (counterAtk != null ? counterAtk : "Aucune contre-attaque"));
-
+        
         System.out.println("\nOffre Direction : " + directionKB.getOffreInitiale());
         System.out.println("Offre Syndicat : " + syndicatKB.getOffreInitiale());
     }
