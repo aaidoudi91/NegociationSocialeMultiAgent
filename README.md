@@ -44,7 +44,6 @@ NegociationSocialeMultiAgent/
     └── behaviours/                       Logique de négociation
         ├── NegotiationBehaviour.java     CyclicBehaviour, protocole multi-tours FIPA-ACL
         └── ConcessionStrategy.java       Calcul des contre-offres
-
 ```
 
 ## JADE & Modélisation
@@ -58,9 +57,11 @@ L'architecture Java s'articule autour de 4 packages principaux :
 Définit les structures d'échange entre les agents.
 - **Les 6 dimensions négociables :** Postes supprimés, Plan de requalification, Compensation financière, 
 Rythme de déploiement, Priorité recrutement, et Comité de suivi.
-- **Immuabilité & Sécurité :** Les classes `Offer` et `Argument` sont conçues de manière immuable *(en suivant le 
+- **Immuabilité & Sérialisation :** Les classes `Offer` et `Argument` sont conçues de manière immuable *(en suivant le 
 Design Pattern Builder)*. Cela garantit qu'aucune donnée ne peut être altérée par effet de bord lors de son transit 
-sur le réseau JADE.
+sur le réseau JADE. Aussi, ces deux classes implémentent l'interface Serializable, condition obligatoire pour que JADE 
+puisse les convertir en flux d'octets lors de l'appel à *setContentObject()* et les reconstruire à l'identique chez 
+l'agent destinataire via *getContentObject()*.
 
 ### 2. Bases de Connaissances : `app.knowledge`
 Encapsule les données privées, les contraintes et les limites de chaque camp. Les agents ne partagent pas ces 
