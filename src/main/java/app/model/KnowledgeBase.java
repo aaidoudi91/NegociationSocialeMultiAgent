@@ -11,9 +11,4 @@ public interface KnowledgeBase {
     boolean estAcceptable(Offer offer);
     // Ajuste une offre calculée pour s'assurer qu'elle ne dépasse pas les limites fixées par getOffreMinAcceptable().
     Offer brider(Offer offer);
-
-    // Interroge le système rAIson pour générer un argument justifiant la position de l'agent sur une dimension.
-    Argument genererArgumentPour(Dimension dimension);
-    // Évalue un argument reçu de l'adversaire au tour précédent et tente de formuler une attaque.
-    Argument genererArgumentContre(Argument incoming);
 }
