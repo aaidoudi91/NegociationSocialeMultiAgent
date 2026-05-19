@@ -2,6 +2,7 @@ package app.agents;
 
 import app.behaviours.NegotiationBehaviour;
 import app.knowledge.DirectionKB;
+import app.raison.RaisonClient;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
@@ -13,10 +14,13 @@ import jade.domain.FIPAException;
 /** Agent représentant la Direction de l'entreprise, dont l'objectif est de maximiser le ROI tout en minimisant les
  * concessions. Il est initiateur de la négociation. */
 public class DirectionAgent extends Agent {
+    private static final String API_KEY = "";
+    private static final String APP_ID = "PRJ31675"; // Projet RAISON de la Direction
+
     @Override
     protected void setup() {
         System.out.println("[DIRECTION] Agent démarré : " + getAID().getName());
-        // Comportement cyclique (toutes les 500ms) pour chercher l'agent Syndicat
+        // Comportement cyclique pour chercher l'agent Syndicat
         // Permet à la Direction de démarrer même si le Syndicat n'est pas encore prêt
         addBehaviour(new TickerBehaviour(this, 500) {
             @Override
@@ -24,8 +28,10 @@ public class DirectionAgent extends Agent {
                 AID partnerAID = searchDF();
                 if (partnerAID != null) {
                     System.out.println("[DIRECTION] Syndicat trouvé : " + partnerAID.getLocalName());
-                    // Initialise la négociation avec sa KB et l'AID du partenaire
-                    addBehaviour(new NegotiationBehaviour(myAgent, new DirectionKB(), partnerAID, true));
+                    RaisonClient raisonClient = new RaisonClient(API_KEY, APP_ID);
+                    raisonClient.printMetadata();
+                    // Initialise la négociation avec sa KB, l'AID du partenaire et son instance RAISON
+                    addBehaviour(new NegotiationBehaviour(myAgent, new DirectionKB(), partnerAID, true, raisonClient));
                     stop();
                 } else {
                     System.out.println("[DIRECTION] Syndicat introuvable, nouvelle tentative...");
