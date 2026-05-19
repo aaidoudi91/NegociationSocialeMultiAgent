@@ -23,10 +23,10 @@ public class DirectionKB implements KnowledgeBase {
     @Override
     public Offer getOffreMinAcceptable() {
         return new Offer.Builder()
-                .postesSupprimes(40) // Limite de rentabilité
+                .postesSupprimes(35) // Limite de rentabilité
                 .dureeRequalification(15) // Concession max sur la formation
                 .compensationMois(9) // Concession max sur le budget
-                .rythmeDeploiement(18) // Délai max toléré
+                .rythmeDeploiement(20) // Délai max toléré
                 .prioriteRecrutement(true) // Accepté comme concession finale
                 .comiteSuivi(false) // Refus catégorique
                 .build();
@@ -55,30 +55,5 @@ public class DirectionKB implements KnowledgeBase {
                 .prioriteRecrutement(o.isPrioriteRecrutement())
                 .comiteSuivi(min.isComiteSuivi())
                 .build();
-    }
-
-
-    // Simule le moteur rAIson. Génère des arguments préconçus pour défendre la position de la Direction sur une
-    // dimension spécifique, basés sur des données financières.
-    @Override
-    public Argument genererArgumentPour(Dimension dim) {
-        return new Argument("ARG_DIR_RYTHME",
-                "Un déploiement en 18 mois est la limite de viabilité économique",
-                "ROI atteint en 18 mois selon nos projections financières internes",
-                "Retarder détériore le ROI",
-                Dimension.RYTHME_DEPLOIEMENT, Argument.Type.SUPPORT, 0.75);
-    }
-
-    // Tente de contrer un argument spécifique reçu du Syndicat. Retourne null si la Direction n'en a pas.
-    @Override
-    public Argument genererArgumentContre(Argument incoming) {
-        if ("ARG_SYND_01".equals(incoming.getId())) {
-            return new Argument("ARG_DIR_ATTACK_01",
-                    "Nos formations sont sur mesure, non comparables aux statistiques sectorielles",
-                    "Programme de requalification validé par 3 organismes certifiés",
-                    "Les statistiques générales ne s'appliquent pas à un dispositif dédié",
-                    incoming.getDimensionCible(), Argument.Type.ATTAQUE, 0.55);
-        }
-        return null; // pas d'attaque connue donc on ne fait rien
     }
 }
