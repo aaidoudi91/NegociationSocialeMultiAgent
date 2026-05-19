@@ -23,10 +23,10 @@ public class SyndicatKB implements KnowledgeBase {
     @Override
     public Offer getOffreMinAcceptable() {
         return new Offer.Builder()
-                .postesSupprimes(40)
+                .postesSupprimes(45)
                 .dureeRequalification(12)
                 .compensationMois(6)
-                .rythmeDeploiement(18)
+                .rythmeDeploiement(15)
                 .prioriteRecrutement(true) // Doit rester vrai
                 .comiteSuivi(false) // Prêt à l'abandonner en dernier recours
                 .build();
@@ -57,31 +57,5 @@ public class SyndicatKB implements KnowledgeBase {
                 .prioriteRecrutement(min.isPrioriteRecrutement())
                 .comiteSuivi(o.isComiteSuivi())
                 .build();
-    }
-
-
-    // Simule le moteur rAIson et génère des arguments préconçus pour défendre la position du Syndicat,
-    // basés sur des données sociales et des précédents.
-    @Override
-    public Argument genererArgumentPour(Dimension dim) {
-        return new Argument("ARG_SYND_01",
-                "La requalification à 6 mois est insuffisante pour ce profil",
-                "67% des travailleurs ont +45 ans. Taux de reconversion réelle à 6 mois : 23%",
-                "Un plan qui échoue pour 77% des concernés ne constitue pas une protection réelle",
-                Dimension.DUREE_REQUALIFICATION, Argument.Type.SUPPORT, 0.82);
-    }
-
-    // Tente de contrer un argument de la Direction en attaquant ses prémisses
-    @Override
-    public Argument genererArgumentContre(Argument incoming) {
-        if ("ARG_DIR_ATTACK_01".equals(incoming.getId())) {
-            return new Argument("ARG_SYND_ATK_02",
-                    "La certification ne garantit pas le résultat concret sur ce profil",
-                    "Aucune donnée de suivi post-formation fournie pour des profils +45 ans",
-                    "Sans données réelles sur ce profil, la certification est insuffisante",
-                    incoming.getDimensionCible(), Argument.Type.ATTAQUE, 0.78
-            );
-        }
-        return null;
     }
 }
