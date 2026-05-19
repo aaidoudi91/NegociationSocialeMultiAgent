@@ -1,64 +1,78 @@
 package app.behaviours;
 
+import app.model.Dimension;
+import app.model.KnowledgeBase;
+import app.model.Offer;
+import app.raison.ElementBuilder;
+import app.raison.RaisonClient;
+import app.raison.RaisonElement;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import app.model.KnowledgeBase;
-import app.model.Offer;
+
+import java.util.List;
 
 /** Comportement JADE gérant la boucle de négociation multi-tours. Implémenté en tant que CyclicBehaviour pour écouter
- * et répondre en continu jusqu'à ce qu'un accord ou une impasse soit atteint. */
+ * et répondre en continu jusqu'à ce qu'un accord ou une impasse soit atteint.
+ * À chaque tour, RAISON est consulté pour décider de l'action à entreprendre. */
 public class NegotiationBehaviour extends CyclicBehaviour {
+
     private final KnowledgeBase kb;
     private final boolean isInitiateur;
-    private static final int TOURS_MAX = 15; // Sécurité pour éviter les négociations infinies
+    private final RaisonClient raisonClient;
+
+    private static final int TOURS_MAX = 7;
     private static final String CONV_ID = "negociation";
 
-    private AID destinataire; // Peut être null au départ pour l'agent répondeur
+    private AID destinataire; // Null au départ pour l'agent répondeur
     private Offer offreCourante;
     private Offer derniereOffreRecue;
     private int tour = 0;
     private boolean termine = false; // Condition d'arrêt du CyclicBehaviour
-    private boolean initie = false; // Permet à l'initiateur de lancer la négociation une seule fois
+    private boolean initie = false; // Permet à l'initiateur de lancer une seule fois
 
-    public NegotiationBehaviour(Agent agent, KnowledgeBase kb, AID partenaire, boolean isInitiateur) {
+    public NegotiationBehaviour(Agent agent, KnowledgeBase kb, AID partenaire, boolean isInitiateur,
+                                RaisonClient raisonClient) {
         super(agent);
         this.kb = kb;
         this.destinataire = partenaire;
         this.isInitiateur = isInitiateur;
-        this.offreCourante = kb.getOffreInitiale(); // Initialisation avec la position de base de la KB
+        this.raisonClient = raisonClient;
+        this.offreCourante = kb.getOffreInitiale();
     }
 
     @Override
     public void action() {
-        if (termine) { // Si la négociation est terminée, on bloque le comportement
+        if (termine) {
             block();
             return;
         }
 
-        if (isInitiateur && !initie) { // Si l'initiateur est Direction, alors envoie la première offre
+        // L'initiateur envoie la première offre sans attendre de message
+        if (isInitiateur && !initie) {
             initie = true;
             System.out.printf("%nDÉBUT DE LA NÉGOCIATION%n");
             envoyerOffre(offreCourante);
-            return; // On sort pour laisser le temps au message de partir, on lira la réponse au prochain cycle
+            return;
         }
 
         // Écoute des messages filtrés par l'ID de conversation
         MessageTemplate mt = MessageTemplate.MatchConversationId(CONV_ID);
         ACLMessage message = myAgent.receive(mt);
         if (message == null) {
-            block(); // Met l'agent en veille jusqu'au prochain message
+            block();
             return;
         }
 
-        if (destinataire == null) { // Découverte du partenaire
+        // Découverte du partenaire depuis le premier message reçu (côté Syndicat)
+        if (destinataire == null) {
             destinataire = message.getSender();
             System.out.printf("[%s] Partenaire découvert : %s%n", myAgent.getLocalName(), destinataire.getLocalName());
         }
 
-        switch (message.getPerformative()) { // Choix des speech acts
+        switch (message.getPerformative()) {
             case ACLMessage.PROPOSE:
                 traiterProposition(message);
                 break;
@@ -67,34 +81,121 @@ public class NegotiationBehaviour extends CyclicBehaviour {
                 termine = true;
                 break;
             case ACLMessage.FAILURE:
-                System.out.printf("[%s] Impasse déclaré par l'autre agent.%n", myAgent.getLocalName());
+                System.out.printf("[%s] Impasse déclarée par l'autre agent.%n", myAgent.getLocalName());
                 termine = true;
                 break;
         }
     }
 
-    // Traite la réception d'une offre (PROPOSE). Vérifie si l'acceptabilité, sinon calcule et envoie une contre-offre.
+    // Traite la réception d'une offre (PROPOSE) : construit les éléments actifs, consulte RAISON, puis agit selon
+    // la décision retournée.
     private void traiterProposition(ACLMessage message) {
         try {
-            derniereOffreRecue = (Offer) message.getContentObject(); // Désérialisation de l'objet Offer transmis
+            derniereOffreRecue = (Offer) message.getContentObject();
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
+        System.out.printf("[%s] Tour %-2d | Reçu    : %s%n", myAgent.getLocalName(), tour, derniereOffreRecue);
 
-        System.out.printf("[%s] Tour %d | Reçu : %s%n", myAgent.getLocalName(), tour, derniereOffreRecue);
-
-        if (kb.estAcceptable(derniereOffreRecue)) { // L'offre satisfait nos conditions minimales alors accord
+        // Vérification directe via la KB : si toutes les conditions minimales sont atteintes, accord immédiat
+        if (kb.estAcceptable(derniereOffreRecue)) {
             envoyerAccord();
-        } else if (tour >= TOURS_MAX) { // On a dépassé la limite de tours sans trouver d'accord alors échec
-            signalerImpasse();
-        } else { // L'offre est inacceptable alors génère une contre-proposition
-            // Calcul de la concession puis brider par la KB pour ne jamais franchir les lignes rouges
-            offreCourante = kb.brider(ConcessionStrategy.conceder(offreCourante, derniereOffreRecue));
-            tour++;
-            System.out.printf("[%s] Tour %d | Envoyé : %s%n", myAgent.getLocalName(), tour, offreCourante);
-            envoyerOffre(offreCourante);
+            return;
         }
+
+        // Si dernier tour atteint alors impasse forcée
+        if (tour >= TOURS_MAX) {
+            signalerImpasse();
+            return;
+        }
+
+        // Décision via Java (si 1 échec) ou RAISON (si n échecs)
+        String decision = isInitiateur ? deciderDirection(derniereOffreRecue) : deciderSyndicat(derniereOffreRecue);
+        System.out.printf("[%s] Décision       : %s%n", myAgent.getLocalName(), decision);
+        switch (decision) {
+            case "accept_offer":
+                envoyerAccord();
+                return;
+
+            case "counter_propose_requalification":
+                offreCourante = kb.brider(ConcessionStrategy.concederSur(offreCourante, derniereOffreRecue,
+                        Dimension.DUREE_REQUALIFICATION, 0.35));
+                break;
+
+            case "counter_propose_compensation":
+            case "counter_propose_budget":
+                offreCourante = kb.brider(ConcessionStrategy.concederSur(offreCourante, derniereOffreRecue,
+                        Dimension.COMPENSATION, 0.35));
+                break;
+
+            case "counter_propose_timeline":
+                offreCourante = kb.brider(ConcessionStrategy.concederSur(offreCourante, derniereOffreRecue,
+                        Dimension.RYTHME_DEPLOIEMENT, 0.35));
+                break;
+
+            case "counter_propose_jobs":
+                offreCourante = kb.brider(ConcessionStrategy.concederSur(offreCourante, derniereOffreRecue,
+                        Dimension.POSTES_SUPPRIMES, 0.35));
+                break;
+
+            case "reject_offer":
+                // Fallback RAISON (erreur réseau / crédits épuisés) → concession uniforme
+                // L'impasse réelle est gérée par JADE
+                offreCourante = kb.brider(ConcessionStrategy.conceder(offreCourante, derniereOffreRecue));
+                break;
+
+            case "counter_propose_all":
+            default:
+                offreCourante = kb.brider(ConcessionStrategy.conceder(offreCourante, derniereOffreRecue));
+                break;
+        }
+
+        tour++;
+        System.out.printf("[%s] Tour %-2d | Envoyé  : %s%n",myAgent.getLocalName(), tour, offreCourante);
+        envoyerOffre(offreCourante);
+    }
+
+    // Détermine la stratégie de contre-offre sans systématiquement appeler RAISON. Si une seule dimension est en échec
+    // alors décision Java directe, si plusieurs dimensions sont en échec alors délégation à RAISON.
+    private String deciderSyndicat(Offer r) {
+        Offer min = kb.getOffreMinAcceptable();
+        boolean postesOk = r.getPostesSupprimes() <= min.getPostesSupprimes();
+        boolean requalifOk = r.getDureeRequalification() >= min.getDureeRequalification();
+        boolean compensOk = r.getCompensationMois() >= min.getCompensationMois();
+        boolean rythmeOk = r.getRythmeDeploiement() >= min.getRythmeDeploiement();
+        boolean prioriteOk = r.isPrioriteRecrutement();
+
+        int nbEchecs = (postesOk ? 0:1) + (requalifOk ? 0:1) + (compensOk ? 0:1) + (rythmeOk ? 0:1) +(prioriteOk ? 0:1);
+
+        if (nbEchecs == 1) {
+            if (!requalifOk) return "counter_propose_requalification";
+            if (!compensOk) return "counter_propose_compensation";
+            return "counter_propose_all"; // postes, rythme ou priorité seul(e)
+        }
+
+        System.out.printf("[%s] Conflit multi-dim (%d échecs) → appel RAISON%n", myAgent.getLocalName(), nbEchecs);
+        return raisonClient.query(ElementBuilder.forSyndicat(r));
+    }
+
+    private String deciderDirection(Offer r) {
+        Offer min = kb.getOffreMinAcceptable();
+        boolean postesOk = r.getPostesSupprimes() >= min.getPostesSupprimes();
+        boolean compensOk = r.getCompensationMois() <= min.getCompensationMois();
+        boolean rythmeOk = r.getRythmeDeploiement() <= min.getRythmeDeploiement();
+        boolean requalifOk = r.getDureeRequalification() <= min.getDureeRequalification();
+
+        int nbEchecs = (postesOk ? 0 : 1) + (compensOk  ? 0 : 1) + (rythmeOk   ? 0 : 1) + (requalifOk ? 0 : 1);
+
+        if (nbEchecs == 1) {
+            if (!rythmeOk) return "counter_propose_timeline";
+            if (!compensOk) return "counter_propose_budget";
+            if (!postesOk) return "counter_propose_jobs";
+            return "counter_propose_all"; // requalif seule
+        }
+
+        System.out.printf("[%s] Conflit multi-dim (%d échecs) → appel RAISON%n", myAgent.getLocalName(), nbEchecs);
+        return raisonClient.query(ElementBuilder.forDirection(r));
     }
 
     private void envoyerOffre(Offer offer) {
@@ -113,7 +214,15 @@ public class NegotiationBehaviour extends CyclicBehaviour {
         message.setConversationId(CONV_ID);
         message.setContent("ACCORD");
         myAgent.send(message);
-        System.out.printf("%n[%s] ACCORD FINAL : %s%n", myAgent.getLocalName(), derniereOffreRecue);
+        System.out.println("\n════════════════════════════════════════");
+        System.out.println("         ACCORD FINAL SIGNÉ             ");
+        System.out.printf("  Postes supprimés   : %d%n",    derniereOffreRecue.getPostesSupprimes());
+        System.out.printf("  Requalification    : %d mois%n", derniereOffreRecue.getDureeRequalification());
+        System.out.printf("  Compensation       : %d mois%n", derniereOffreRecue.getCompensationMois());
+        System.out.printf("  Rythme déploiement : %d mois%n", derniereOffreRecue.getRythmeDeploiement());
+        System.out.printf("  Priorité recrut.   : %b%n",    derniereOffreRecue.isPrioriteRecrutement());
+        System.out.printf("  Comité de suivi    : %b%n",    derniereOffreRecue.isComiteSuivi());
+        System.out.println("════════════════════════════════════════");
         termine = true;
     }
 
