@@ -2,14 +2,21 @@ package app.raison;
 
 import java.util.List;
 
-/** Corps de la requête POST envoyée à l'API rAIson : encapsule la liste des éléments actifs détectés par l'agent
- * ainsi que le nombre de solutions souhaitées en retour. */
+/** Body du POST /executions/{appId}/latest envoyé à l'API rAIson. */
 public class RaisonRequest {
     private List<RaisonElement> elements;
-    private int limit;
+    private List<RaisonOption> options;
 
-    public RaisonRequest(List<RaisonElement> elements) {
+    public RaisonRequest(List<RaisonElement> elements, List<RaisonOption> options) {
         this.elements = elements;
-        this.limit = 1;
+        this.options  = options;
+    }
+
+    public List<RaisonElement> getElements() { 
+        return elements; 
+    }
+    
+    public List<RaisonOption> getOptions() { 
+        return options;  
     }
 }
