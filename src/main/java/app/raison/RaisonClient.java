@@ -2,87 +2,101 @@ package app.raison;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-/** Client HTTP pour l'API rAIson : chaque agent dispose de sa propre instance pointant vers son projet dédié.
- * En cas d'erreur HTTP ou d'exception réseau, retourne "reject_offer" par défaut afin de ne jamais bloquer JADE. */
+/** Client HTTP vers l'API rAIson. Utilise HttpURLConnection
+ * En cas d'erreur réseau ou de réponse vide, retourne "reject_offer" comme fallback sûr. */
 public class RaisonClient {
     private static final String BASE_URL = "https://api.ai-raison.com/executions";
-    private static final String VERSION  = "latest";
+    private static final String VERSION = "latest";
 
-    private final HttpClient client;
-    private final Gson gson;
+    private final Gson gson = new Gson();
     private final String apiKey;
     private final String appId;
+    private final List<RaisonOption> projectOptions;
 
-    public RaisonClient(String apiKey, String appId) {
+    public RaisonClient(String apiKey, String appId, List<RaisonOption> projectOptions) {
         this.apiKey = apiKey;
         this.appId = appId;
-        this.client = HttpClient.newHttpClient();
-        this.gson = new Gson();
+        this.projectOptions = projectOptions;
     }
 
-    // Envoie les éléments actifs à rAIson et retourne le label de l'option gagnante.
     public String query(List<RaisonElement> activeElements) {
         try {
-            RaisonRequest request = new RaisonRequest(activeElements);
-            String body = gson.toJson(request);
+            String body = gson.toJson(new RaisonRequest(activeElements, projectOptions));
+            URL url = new URL(BASE_URL + "/" + appId + "/" + VERSION);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("x-api-key", apiKey);
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(10_000);
+            conn.setReadTimeout(15_000);
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/" + appId + "/" + VERSION))
-                    .header("Content-Type", "application/json")
-                    .header("x-api-key", apiKey) // header d'authentification
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.getBytes(StandardCharsets.UTF_8));
+            }
 
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            int status = conn.getResponseCode();
+            InputStream is = (status == 200) ? conn.getInputStream() : conn.getErrorStream();
+            String response;
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                response = sb.toString();
+            }
 
-            if (response.statusCode() == 200) {
-                List<RaisonResult> results = gson.fromJson(
-                        response.body(),
-                        new TypeToken<List<RaisonResult>>() {}.getType()
-                );
-
-                // On cherche la première option qui est une solution
-                return results.stream()
-                        .filter(RaisonResult::isSolution)
-                        .map(r -> r.getOption().getLabel())
-                        .findFirst()
-                        .orElse("reject_offer"); // fallback sécurisé
-
-            } else {
-                System.err.println("[RAISON] Erreur HTTP " + response.statusCode()
-                        + " : " + response.body());
+            if (status != 200) {
+                System.err.printf("[RAISON] Erreur HTTP %d%n", status);
                 return "reject_offer";
             }
 
+            List<RaisonResult> results = gson.fromJson(
+                    response,
+                    new TypeToken<List<RaisonResult>>() {}.getType()
+            );
+
+            if (results == null || results.isEmpty()) {
+                System.err.println("[RAISON] Aucune solution retournée.");
+                return "reject_offer";
+            }
+
+            return results.stream()
+                    .filter(RaisonResult::isSolution)
+                    .map(r -> r.getOption().getLabel())
+                    .findFirst()
+                    .orElse("reject_offer");
+
         } catch (Exception e) {
-            System.err.println("[RAISON] Exception lors de l'appel API : " + e.getMessage());
+            System.err.printf("[RAISON] Exception %s : %s%n",
+                    e.getClass().getSimpleName(), e.getMessage());
+            e.printStackTrace();  // ← stack trace complète pour déboguer
             return "reject_offer";
         }
     }
 
-    // Appelle le GET /{appId}/{version} pour afficher tous les éléments et options
     public void printMetadata() {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/" + appId + "/" + VERSION))
-                    .header("x-api-key", apiKey)
-                    .GET()
-                    .build();
+            URL url = new URL(BASE_URL + "/" + appId + "/" + VERSION);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("x-api-key", apiKey);
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            System.out.println("[RAISON] Metadata (status " + response.statusCode() + ") :");
-            System.out.println(response.body());
-
+            int status = conn.getResponseCode();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                System.out.printf("[RAISON] Metadata (status %d) :%n%s%n", status, sb);
+            }
         } catch (Exception e) {
-            System.err.println("[RAISON] Erreur metadata : " + e.getMessage());
+            System.err.printf("[RAISON] Erreur metadata : %s%n", e.getMessage());
         }
     }
 }
