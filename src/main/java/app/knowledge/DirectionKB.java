@@ -2,20 +2,19 @@ package app.knowledge;
 
 import app.model.*;
 
-/** Base de Connaissances de l'Agent Direction représentant la stratégie de l'entreprise (maximiser le ROI tout en
- * limitant le coût des mesures sociales). */
+/** Base de Connaissances de l'Agent Direction représentant la stratégie de l'entreprise. */
 public class DirectionKB implements KnowledgeBase {
 
     // Définit la position de départ idéale de la Direction.
     @Override
     public Offer getOffreInitiale() {
         return new Offer.Builder()
-                .postesSupprimes(80)
-                .dureeRequalification(6) // Formation courte
-                .compensationMois(0) // Aucune compensation
-                .rythmeDeploiement(6) // Déploiement très rapide
-                .prioriteRecrutement(false) // Aucune garantie d'embauche
-                .comiteSuivi(false) // Pas de contrôle syndical
+                .postesSupprimes(75)
+                .dureeRequalification(9)
+                .compensationMois(3)
+                .rythmeDeploiement(6)
+                .prioriteRecrutement(false)
+                .comiteSuivi(false)
                 .build();
     }
 
@@ -23,12 +22,12 @@ public class DirectionKB implements KnowledgeBase {
     @Override
     public Offer getOffreMinAcceptable() {
         return new Offer.Builder()
-                .postesSupprimes(35) // Limite de rentabilité
-                .dureeRequalification(15) // Concession max sur la formation
-                .compensationMois(9) // Concession max sur le budget
-                .rythmeDeploiement(20) // Délai max toléré
-                .prioriteRecrutement(true) // Accepté comme concession finale
-                .comiteSuivi(false) // Refus catégorique
+                .postesSupprimes(35)
+                .dureeRequalification(15)
+                .compensationMois(9)
+                .rythmeDeploiement(20)
+                .prioriteRecrutement(true)
+                .comiteSuivi(false)
                 .build();
     }
 
@@ -43,7 +42,7 @@ public class DirectionKB implements KnowledgeBase {
     }
 
     // Force une offre à respecter les limites strictes de la Direction. Utilisé pour s'assurer que les concessions
-    // générées mathématiquement ne dépassent jamais le seuil de tolérance de l'entreprise.
+    // ne dépassent jamais le seuil de tolérance de l'entreprise.
     @Override
     public Offer brider(Offer o) {
         Offer min = getOffreMinAcceptable();
