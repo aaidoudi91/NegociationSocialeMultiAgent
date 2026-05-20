@@ -1,10 +1,5 @@
 package app;
 
-import app.knowledge.DirectionKB;
-import app.knowledge.SyndicatKB;
-import app.model.Argument;
-import app.model.Dimension;
-import app.model.KnowledgeBase;
 import jade.core.Runtime;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
