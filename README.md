@@ -41,13 +41,13 @@ src/main/java/app/
 │ ├── NegotiationBehaviour.java CyclicBehaviour gérant le protocole multi-tours FIPA-ACL
 │ └── ConcessionStrategy.java   Calcul des contre-offres (concession uniforme ou ciblée)
 │
-└── raison/                   Intégration de l'API rAIson
-├── ElementBuilder.java       Traduit l'état d'une offre en éléments rAIson actifs
-├── RaisonClient.java         Client HTTP (HttpURLConnection) vers l'API
-├── RaisonElement.java        Élément soumis à l'API (identifié par son ID)
-├── RaisonOption.java         Option de décision évaluée par rAIson (id + label)
-├── RaisonRequest.java        Body du POST (elements + options)
-└── RaisonResult.java         Réponse de l'API (option + isSolution + explanation)
+└── raison/                     Intégration de l'API rAIson
+    ├── ElementBuilder.java     Traduit l'état d'une offre en éléments rAIson actifs
+    ├── RaisonClient.java       Client HTTP (HttpURLConnection) vers l'API
+    ├── RaisonElement.java      Élément soumis à l'API (identifié par son ID)
+    ├── RaisonOption.java       Option de décision évaluée par rAIson (id + label)
+    ├── RaisonRequest.java      Body du POST (elements + options)
+    └── RaisonResult.java       Réponse de l'API (option + isSolution + explanation)
 ```
 
 ## Modélisation
