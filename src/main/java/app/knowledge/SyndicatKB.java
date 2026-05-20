@@ -2,20 +2,19 @@ package app.knowledge;
 
 import app.model.*;
 
-/** Base de Connaissances de l'Agent Syndicat représentant la stratégie de protection sociale (limiter la perte
- * d'emplois, maximiser les garanties de reclassement et les compensations financières). */
+/** Base de Connaissances de l'Agent Syndicat représentant la stratégie de protection sociale. */
 public class SyndicatKB implements KnowledgeBase {
 
     // Définit la position de départ idéale du Syndicat.
     @Override
     public Offer getOffreInitiale() {
         return new Offer.Builder()
-                .postesSupprimes(0) // Refus initial de suppression
-                .dureeRequalification(24) // Demande de formation longue
-                .compensationMois(18) // Demande d'indemnité maximale
-                .rythmeDeploiement(36) // Étale le déploiement sur 3 ans
-                .prioriteRecrutement(true) // Exige la priorité d'embauche
-                .comiteSuivi(true) // Exige un droit de regard
+                .postesSupprimes(0) 
+                .dureeRequalification(24) 
+                .compensationMois(18) 
+                .rythmeDeploiement(36) 
+                .prioriteRecrutement(true) 
+                .comiteSuivi(true) 
                 .build();
     }
 
@@ -23,12 +22,12 @@ public class SyndicatKB implements KnowledgeBase {
     @Override
     public Offer getOffreMinAcceptable() {
         return new Offer.Builder()
-                .postesSupprimes(45)
+                .postesSupprimes(50)
                 .dureeRequalification(12)
-                .compensationMois(6)
+                .compensationMois(4)
                 .rythmeDeploiement(15)
-                .prioriteRecrutement(true) // Doit rester vrai
-                .comiteSuivi(false) // Prêt à l'abandonner en dernier recours
+                .prioriteRecrutement(true)
+                .comiteSuivi(false)
                 .build();
     }
 
