@@ -1,4 +1,4 @@
-# Négociation Direction–Syndicat par Système Multi-Agents Argumentatif
+# Négociation Direction–Syndicat par Système Multi-Agents
 Système Multi-Agents modélisant la négociation d'un plan social entre un **Syndicat** et une **Direction** d'entreprise.
 
 Construit en **Java** avec **JADE** (Java Agent DEvelopment Framework) pour la gestion des agents et
